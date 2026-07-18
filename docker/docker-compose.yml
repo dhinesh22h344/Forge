@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: forge
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - forge_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forge -d forge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/forge
+      DB_USERNAME: forge
+      DB_PASSWORD: forge
+      JWT_SECRET: local-dev-secret-change-me-in-any-real-deployment-32bytes
+    ports:
+      - "8080:8080"
+
+volumes:
+  forge_postgres_data:

@@ -1,0 +1,339 @@
+openapi: 3.0.3
+info:
+  title: Forge API
+  description: >
+    Design-first contract for the Forge Personal Operating System backend.
+    This is a MILESTONE-0 SKELETON: paths and resource shapes are locked so the
+    Flutter client generator and backend controllers agree on the surface area,
+    but full request/response schemas, examples, and error cases are filled in
+    per-milestone (see docs/architecture/product-spec.md for the milestone map).
+  version: "0.1.0"
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: users
+  - name: categories
+  - name: habits
+  - name: habit-logs
+  - name: reminders
+  - name: achievements
+  - name: reports
+  - name: journal
+  - name: profile
+  - name: settings
+  - name: notifications
+  - name: export
+  - name: import
+  - name: search
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new user
+      security: []
+      responses:
+        "201": { description: User created }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "409": { description: Email already registered }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: >
+        Email/password login, issues a Forge JWT pair directly. Interim path
+        used until Firebase project credentials are provisioned (see
+        /auth/session below) — kept even after Firebase lands, as a
+        server-verified fallback that doesn't depend on Firebase being up.
+      security: []
+      responses:
+        "200": { description: Access + refresh token issued }
+        "401": { description: Invalid credentials }
+
+  /auth/session:
+    post:
+      tags: [auth]
+      summary: >
+        Exchange a verified Firebase ID token for a Forge JWT pair. NOT YET
+        WIRED — requires a Firebase project (google-services.json /
+        GoogleService-Info.plist + Admin SDK service account) that only the
+        product owner can provision via the Firebase console. Endpoint shape
+        is locked so the client integration is a drop-in once credentials
+        exist.
+      security: []
+      responses:
+        "200": { description: Access + refresh token issued }
+        "401": { description: Invalid Firebase token }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Rotate refresh token for a new access token
+      security: []
+      responses:
+        "200": { description: New token pair issued }
+        "401": { description: Refresh token invalid or revoked }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke the current refresh token
+      responses:
+        "204": { description: Logged out }
+
+  /users/me:
+    get:
+      tags: [users]
+      summary: Get the authenticated user's profile
+      responses:
+        "200": { description: OK }
+    patch:
+      tags: [users]
+      summary: Update profile fields
+      responses:
+        "200": { description: Updated }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /categories:
+    get:
+      tags: [categories]
+      summary: List categories for the authenticated user
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [categories]
+      summary: Create a category
+      responses:
+        "201": { description: Created }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [categories]
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [categories]
+      responses:
+        "200": { description: Updated }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [categories]
+      summary: Soft delete
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /habits:
+    get:
+      tags: [habits]
+      summary: List habits (filterable by category, status, folder, tag)
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [habits]
+      summary: Create a habit
+      responses:
+        "201": { description: Created }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /habits/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [habits]
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [habits]
+      responses:
+        "200": { description: Updated }
+    delete:
+      tags: [habits]
+      summary: Archive/soft delete
+      responses:
+        "204": { description: Deleted }
+
+  /habits/{id}/logs:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [habit-logs]
+      summary: Log history for a habit
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [habit-logs]
+      summary: Record a completion/progress entry for a date (idempotent per day)
+      responses:
+        "200": { description: Log recorded or updated }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /habits/{id}/logs/streak:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [habit-logs]
+      summary: Current/best streak for a single habit, computed from its logs
+      responses:
+        "200": { description: OK }
+
+  /habits/{id}/reminders:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [reminders]
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [reminders]
+      responses:
+        "201": { description: Created }
+
+  /dashboard:
+    get:
+      tags: [users]
+      summary: Aggregated dashboard payload (streaks, today, XP, widgets)
+      responses:
+        "200": { description: OK }
+
+  /dashboard/widgets:
+    put:
+      tags: [users]
+      summary: Persist widget layout (order, visibility, size)
+      responses:
+        "200": { description: Updated }
+
+  /reports/summary:
+    get:
+      tags: [reports]
+      summary: Stats for a given range (daily/weekly/monthly/yearly/lifetime)
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly, lifetime]
+      responses:
+        "200": { description: OK }
+
+  /reports/heatmap:
+    get:
+      tags: [reports]
+      summary: GitHub-style completion heatmap data
+      responses:
+        "200": { description: OK }
+
+  /achievements:
+    get:
+      tags: [achievements]
+      summary: Full catalog with unlock status for the authenticated user
+      responses:
+        "200": { description: OK }
+
+  /journal/{date}:
+    parameters:
+      - name: date
+        in: path
+        required: true
+        schema: { type: string, format: date }
+    get:
+      tags: [journal]
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [journal]
+      summary: Create or update the entry for this date
+      responses:
+        "200": { description: Saved }
+
+  /settings:
+    get:
+      tags: [settings]
+      responses:
+        "200": { description: OK }
+    patch:
+      tags: [settings]
+      responses:
+        "200": { description: Updated }
+
+  /notifications/register-device:
+    post:
+      tags: [notifications]
+      summary: Register an FCM device token
+      responses:
+        "204": { description: Registered }
+
+  /export:
+    post:
+      tags: [export]
+      summary: Generate a JSON/CSV/PDF export
+      responses:
+        "202": { description: Export job accepted }
+
+  /import:
+    post:
+      tags: [import]
+      summary: Import a previously exported backup
+      responses:
+        "202": { description: Import job accepted }
+
+  /search:
+    get:
+      tags: [search]
+      summary: Global search across habits, categories, notes, journal, achievements
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    Error:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+        path: { type: string }
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+  responses:
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
