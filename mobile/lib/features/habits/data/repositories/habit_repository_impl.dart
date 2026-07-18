@@ -5,9 +5,11 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/habit_log.dart';
+import '../../domain/entities/habit_reminder.dart';
 import '../../domain/repositories/habit_repository.dart';
 import '../datasources/habit_remote_data_source.dart';
 import '../models/habit_model.dart';
+import '../models/habit_reminder_model.dart';
 
 class HabitRepositoryImpl implements HabitRepository {
   const HabitRepositoryImpl(this._remote);
@@ -94,6 +96,43 @@ class HabitRepositoryImpl implements HabitRepository {
   Future<Result<HabitStreak>> streak(String habitId) async {
     try {
       return Success(await _remote.streak(habitId));
+    } on DioException catch (e) {
+      return Error(_mapError(e));
+    }
+  }
+
+  @override
+  Future<Result<List<HabitReminder>>> listReminders(String habitId) async {
+    try {
+      return Success(await _remote.listReminders(habitId));
+    } on DioException catch (e) {
+      return Error(_mapError(e));
+    }
+  }
+
+  @override
+  Future<Result<HabitReminder>> createReminder(String habitId, HabitReminderDraft draft) async {
+    try {
+      return Success(await _remote.createReminder(habitId, HabitReminderModel.draftToJson(draft)));
+    } on DioException catch (e) {
+      return Error(_mapError(e));
+    }
+  }
+
+  @override
+  Future<Result<HabitReminder>> updateReminder(String habitId, String reminderId, HabitReminderDraft draft) async {
+    try {
+      return Success(await _remote.updateReminder(habitId, reminderId, HabitReminderModel.draftToJson(draft)));
+    } on DioException catch (e) {
+      return Error(_mapError(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteReminder(String habitId, String reminderId) async {
+    try {
+      await _remote.deleteReminder(habitId, reminderId);
+      return const Success(null);
     } on DioException catch (e) {
       return Error(_mapError(e));
     }

@@ -197,6 +197,23 @@ paths:
       responses:
         "201": { description: Created }
 
+  /habits/{id}/reminders/{reminderId}:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+      - name: reminderId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [reminders]
+      summary: Update a reminder's time, days, or active state
+      responses:
+        "200": { description: Updated }
+    delete:
+      tags: [reminders]
+      responses:
+        "204": { description: Deleted }
+
   /dashboard:
     get:
       tags: [users]

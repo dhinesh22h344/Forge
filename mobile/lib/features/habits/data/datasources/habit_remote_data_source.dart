@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/habit_log_model.dart';
 import '../models/habit_model.dart';
+import '../models/habit_reminder_model.dart';
 
 class HabitRemoteDataSource {
   const HabitRemoteDataSource(this._client);
@@ -47,6 +48,27 @@ class HabitRemoteDataSource {
   Future<HabitStreakModel> streak(String habitId) async {
     final response = await _client.dio.get('/habits/$habitId/logs/streak');
     return HabitStreakModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<HabitReminderModel>> listReminders(String habitId) async {
+    final response = await _client.dio.get('/habits/$habitId/reminders');
+    return (response.data as List)
+        .map((e) => HabitReminderModel.fromJson(e as Map<String, dynamic>, habitId: habitId))
+        .toList();
+  }
+
+  Future<HabitReminderModel> createReminder(String habitId, Map<String, dynamic> body) async {
+    final response = await _client.dio.post('/habits/$habitId/reminders', data: body);
+    return HabitReminderModel.fromJson(response.data as Map<String, dynamic>, habitId: habitId);
+  }
+
+  Future<HabitReminderModel> updateReminder(String habitId, String reminderId, Map<String, dynamic> body) async {
+    final response = await _client.dio.put('/habits/$habitId/reminders/$reminderId', data: body);
+    return HabitReminderModel.fromJson(response.data as Map<String, dynamic>, habitId: habitId);
+  }
+
+  Future<void> deleteReminder(String habitId, String reminderId) async {
+    await _client.dio.delete('/habits/$habitId/reminders/$reminderId');
   }
 }
 

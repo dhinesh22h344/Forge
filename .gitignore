@@ -9,6 +9,7 @@ mobile/ios/Pods/
 mobile/ios/Flutter/Flutter.framework
 mobile/ios/Flutter/Flutter.podspec
 mobile/android/.gradle/
+mobile/android/build/
 mobile/android/local.properties
 mobile/*.iml
 

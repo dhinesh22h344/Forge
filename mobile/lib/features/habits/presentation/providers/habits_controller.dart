@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failure.dart';
+import '../../../../core/notifications/notification_service.dart';
 import '../../../dashboard/presentation/providers/dashboard_controller.dart';
 import '../../data/repositories/habit_repository_impl.dart';
 import '../../domain/entities/habit.dart';
@@ -80,15 +81,22 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     final repository = ref.read(habitRepositoryProvider);
     final result = await repository.archive(id, archived: true);
     return result.when(
-      success: (_) {
+      success: (_) async {
         final current = state.value;
         if (current != null) {
           state = AsyncData(current.copyWith(habits: [for (final h in current.habits) if (h.id != id) h]));
         }
         ref.invalidate(dashboardControllerProvider);
+        // Archived habits stop repeating, so any pending reminder
+        // notifications for them would otherwise fire for nothing.
+        final remindersResult = await repository.listReminders(id);
+        remindersResult.when(
+          success: (reminders) => NotificationService.instance.cancelAllForReminders(reminders.map((r) => r.id)),
+          failure: (_) => null,
+        );
         return null;
       },
-      failure: (failure) => failure,
+      failure: (failure) async => failure,
     );
   }
 

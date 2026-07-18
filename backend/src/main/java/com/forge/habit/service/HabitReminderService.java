@@ -41,6 +41,17 @@ public class HabitReminderService {
         return habitMapper.toResponse(reminderRepository.save(reminder));
     }
 
+    public HabitReminderResponse update(UUID habitId, UUID reminderId, HabitReminderRequest request) {
+        assertOwned(habitId);
+        HabitReminder reminder = reminderRepository
+                .findByHabitIdAndId(habitId, reminderId)
+                .orElseThrow(() -> ResourceNotFoundException.of("HabitReminder", reminderId));
+        reminder.setLocalTime(request.localTime());
+        reminder.setDaysOfWeek(request.daysOfWeek());
+        reminder.setActive(request.active());
+        return habitMapper.toResponse(reminder);
+    }
+
     public void delete(UUID habitId, UUID reminderId) {
         assertOwned(habitId);
         reminderRepository.deleteByHabitIdAndId(habitId, reminderId);

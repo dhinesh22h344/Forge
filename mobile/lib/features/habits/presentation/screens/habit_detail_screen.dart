@@ -9,6 +9,7 @@ import '../../domain/entities/habit_log.dart';
 import '../providers/habit_detail_providers.dart';
 import '../providers/habits_controller.dart';
 import '../widgets/habit_calendar_month.dart';
+import '../widgets/reminders_section.dart';
 import 'create_habit_screen.dart';
 
 class HabitDetailScreen extends ConsumerWidget {
@@ -114,6 +115,8 @@ class HabitDetailScreen extends ConsumerWidget {
               error: (_, __) => const Text('—'),
               data: (logs) => ForgeCard(child: HabitCalendarMonth(logs: logs, color: _color)),
             ),
+            const SizedBox(height: 24),
+            RemindersSection(habit: habit),
             if (habit.tags.isNotEmpty) ...[
               const SizedBox(height: 24),
               Text('Tags', style: theme.textTheme.titleMedium),

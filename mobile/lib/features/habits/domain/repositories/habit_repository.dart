@@ -1,6 +1,7 @@
 import '../../../../core/error/result.dart';
 import '../entities/habit.dart';
 import '../entities/habit_log.dart';
+import '../entities/habit_reminder.dart';
 import '../entities/repeat_type.dart';
 
 abstract class HabitRepository {
@@ -25,6 +26,14 @@ abstract class HabitRepository {
   });
 
   Future<Result<HabitStreak>> streak(String habitId);
+
+  Future<Result<List<HabitReminder>>> listReminders(String habitId);
+
+  Future<Result<HabitReminder>> createReminder(String habitId, HabitReminderDraft draft);
+
+  Future<Result<HabitReminder>> updateReminder(String habitId, String reminderId, HabitReminderDraft draft);
+
+  Future<Result<void>> deleteReminder(String habitId, String reminderId);
 }
 
 /// The full set of fields needed to create or update a habit — kept as one
@@ -74,4 +83,18 @@ class HabitDraft {
   final String? notes;
   final List<String> tags;
   final String? folder;
+}
+
+class HabitReminderDraft {
+  const HabitReminderDraft({
+    required this.hour,
+    required this.minute,
+    required this.daysOfWeek,
+    required this.active,
+  });
+
+  final int hour;
+  final int minute;
+  final List<String> daysOfWeek;
+  final bool active;
 }
