@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/achievements/presentation/screens/achievements_screen.dart';
 import '../../features/auth/presentation/providers/auth_controller.dart';
 import '../../features/auth/presentation/screens/create_profile_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/habits/presentation/providers/habits_controller.dart';
@@ -14,7 +16,6 @@ import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/reports/presentation/screens/reports_screen.dart';
 import '../../features/settings/presentation/screens/theme_settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
-import '../widgets/coming_soon_screen.dart';
 import '../widgets/loading_view.dart';
 import 'app_shell.dart';
 
@@ -113,11 +114,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/profile',
-              builder: (context, state) =>
-                  const ComingSoonScreen(title: 'Profile', icon: Icons.person_rounded, milestone: 'a follow-up cross-cutting task'),
-            ),
+            GoRoute(path: '/achievements', builder: (context, state) => const AchievementsScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
           ]),
         ],
       ),

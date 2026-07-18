@@ -9,6 +9,7 @@ import '../../domain/entities/habit_log.dart';
 import '../providers/habit_detail_providers.dart';
 import '../providers/habits_controller.dart';
 import '../widgets/habit_calendar_month.dart';
+import '../widgets/milestone_celebration.dart';
 import '../widgets/reminders_section.dart';
 import 'create_habit_screen.dart';
 
@@ -94,9 +95,13 @@ class HabitDetailScreen extends ConsumerWidget {
               color: _color,
               onPressed: () async {
                 HapticFeedback.mediumImpact();
-                await ref.read(habitsControllerProvider.notifier).toggleToday(habit.id);
+                final wasCompleted = isCompletedToday;
+                final failure = await ref.read(habitsControllerProvider.notifier).toggleToday(habit.id);
                 ref.invalidate(habitStreakProvider(habit.id));
                 ref.invalidate(habitLogsProvider(habit.id));
+                if (failure == null && !wasCompleted && context.mounted) {
+                  await maybeCelebrateMilestone(context, ref, habitId: habit.id, habitName: habit.name);
+                }
               },
             ),
             const SizedBox(height: 24),

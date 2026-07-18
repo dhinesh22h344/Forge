@@ -103,6 +103,25 @@ class AuthController extends AsyncNotifier<User?> {
       failure: (failure) => failure,
     );
   }
+
+  Future<Failure?> changePassword({required String currentPassword, required String newPassword}) async {
+    final repository = ref.read(authRepositoryProvider);
+    final result = await repository.changePassword(currentPassword: currentPassword, newPassword: newPassword);
+    return result.when(success: (_) => null, failure: (failure) => failure);
+  }
+
+  Future<Failure?> deleteAccount() async {
+    final repository = ref.read(authRepositoryProvider);
+    final result = await repository.deleteAccount();
+    return result.when(
+      success: (_) {
+        state = const AsyncData(null);
+        ref.read(needsProfileSetupProvider.notifier).state = false;
+        return null;
+      },
+      failure: (failure) => failure,
+    );
+  }
 }
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, User?>(AuthController.new);

@@ -77,7 +77,7 @@ feature isolation — that's not Forge.
 - Declarative route tree in `core/router/`, with a `redirect` guard checking auth state
   (JWT presence + validity) before allowing access to any route under `/app/*`.
 - Deep-link ready from day one (needed later for notification taps → habit detail).
-- Nested navigation: bottom nav (`Dashboard`, `Habits`, `Reports`, `Profile`) uses
+- Nested navigation: bottom nav (`Dashboard`, `Habits`, `Reports`, `Achievements`, `Profile`) uses
   `StatefulShellRoute` so each tab keeps its own navigation stack.
 
 ## Offline-First Data Flow

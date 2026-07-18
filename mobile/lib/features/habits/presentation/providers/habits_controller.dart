@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failure.dart';
 import '../../../../core/notifications/notification_service.dart';
+import '../../../../core/offline/offline_queue.dart';
+import '../../../../core/offline/pending_habit_log.dart';
 import '../../../dashboard/presentation/providers/dashboard_controller.dart';
 import '../../data/repositories/habit_repository_impl.dart';
 import '../../domain/entities/habit.dart';
@@ -104,31 +106,57 @@ class HabitsController extends AsyncNotifier<HabitsState> {
   /// COMPLETED; tapping a completed one marks it SKIPPED — there's no
   /// dedicated "clear today's log" endpoint, so SKIPPED stands in for "not
   /// doing this today" and correctly reverses the XP grant server-side.
+  ///
+  /// Offline-first: the toggle applies to local state immediately regardless
+  /// of connectivity. If the request can't reach the server at all, it's
+  /// queued (see `OfflineQueue`) and replayed on reconnect instead of being
+  /// surfaced as an error — a real server error (validation etc.) still
+  /// reverts the optimistic update and returns the failure.
   Future<Failure?> toggleToday(String habitId) async {
     final current = state.value;
     if (current == null) return null;
     final wasCompleted = current.todayStatusByHabitId[habitId] == HabitLogStatus.completed;
     final newStatus = wasCompleted ? HabitLogStatus.skipped : HabitLogStatus.completed;
+    final today = DateTime.now();
+
+    state = AsyncData(current.copyWith(
+      todayStatusByHabitId: {...current.todayStatusByHabitId, habitId: newStatus},
+    ));
+    // Streak/XP/today's-progress on the dashboard are derived from this same
+    // log — without this it stays stale until the app restarts, since
+    // StatefulShellRoute keeps DashboardScreen alive off-screen rather than
+    // rebuilding it on tab switch.
+    ref.invalidate(dashboardControllerProvider);
 
     final repository = ref.read(habitRepositoryProvider);
-    final result = await repository.upsertLog(habitId: habitId, logDate: DateTime.now(), status: newStatus);
+    final result = await repository.upsertLog(habitId: habitId, logDate: today, status: newStatus);
     return result.when(
-      success: (_) {
-        state = AsyncData(current.copyWith(
-          todayStatusByHabitId: {...current.todayStatusByHabitId, habitId: newStatus},
+      success: (_) async => null,
+      failure: (failure) async {
+        if (failure is NetworkFailure) {
+          await ref.read(offlineQueueProvider).upsert(PendingHabitLog(
+                habitId: habitId,
+                logDate: _dateOnly(today),
+                status: newStatus.wireValue,
+              ));
+          return null;
+        }
+        // Not a connectivity issue — the optimistic update was wrong, revert it.
+        final latest = state.value ?? current;
+        state = AsyncData(latest.copyWith(
+          todayStatusByHabitId: {
+            ...latest.todayStatusByHabitId,
+            habitId: wasCompleted ? HabitLogStatus.completed : HabitLogStatus.skipped,
+          },
         ));
-        // Streak/XP/today's-progress on the dashboard are derived from this
-        // same log — without this it stays stale until the app restarts,
-        // since StatefulShellRoute keeps DashboardScreen alive off-screen
-        // rather than rebuilding it on tab switch.
-        ref.invalidate(dashboardControllerProvider);
-        return null;
+        return failure;
       },
-      failure: (failure) => failure,
     );
   }
 }
 
 bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+String _dateOnly(DateTime d) => d.toIso8601String().split('T').first;
 
 final habitsControllerProvider = AsyncNotifierProvider<HabitsController, HabitsState>(HabitsController.new);

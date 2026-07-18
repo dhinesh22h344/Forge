@@ -54,6 +54,11 @@ public class RefreshTokenService {
         repository.findByTokenHash(hash(rawToken)).ifPresent(RefreshToken::revoke);
     }
 
+    /** Signs the user out of every device — used on password change and account deletion. */
+    public void revokeAllForUser(UUID userId) {
+        repository.findByUserIdAndRevokedFalse(userId).forEach(RefreshToken::revoke);
+    }
+
     private String generateRawToken() {
         byte[] bytes = new byte[48];
         RANDOM.nextBytes(bytes);

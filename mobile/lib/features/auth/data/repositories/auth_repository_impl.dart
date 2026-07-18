@@ -55,7 +55,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> logout() async {
     try {
-      await _remote.logout();
+      final refreshToken = await _tokenStorage.readRefreshToken();
+      if (refreshToken != null) await _remote.logout(refreshToken);
     } on DioException {
       // Best-effort server-side revoke; local session is cleared regardless
       // so the user is never stuck logged-in on this device.
@@ -105,10 +106,35 @@ class AuthRepositoryImpl implements AuthRepository {
     return token != null;
   }
 
+  @override
+  Future<Result<void>> changePassword({required String currentPassword, required String newPassword}) async {
+    try {
+      await _remote.changePassword(currentPassword: currentPassword, newPassword: newPassword);
+      return const Success(null);
+    } on DioException catch (e) {
+      return Error(_mapDioError(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteAccount() async {
+    try {
+      await _remote.deleteAccount();
+    } on DioException catch (e) {
+      return Error(_mapDioError(e));
+    }
+    await _tokenStorage.clear();
+    return const Success(null);
+  }
+
   Failure _mapDioError(DioException e) {
     final response = e.response;
     if (response == null) return const NetworkFailure();
-    if (response.statusCode == 401) return const UnauthorizedFailure('Invalid email or password');
+    if (response.statusCode == 401) {
+      final body = response.data;
+      final message = body is Map ? body['message'] as String? : null;
+      return UnauthorizedFailure(message ?? 'Invalid email or password');
+    }
     if (response.statusCode == 400) {
       final body = response.data;
       if (body is Map && body['fieldErrors'] is List) {

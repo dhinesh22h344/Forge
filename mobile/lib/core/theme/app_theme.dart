@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'forge_page_transitions.dart';
 import 'forge_palette.dart';
 
 /// Builds a [ThemeData] from a [ForgePalette] token set. Every theme (Dark,
@@ -24,7 +25,12 @@ class AppTheme {
     return base.copyWith(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: palette.background,
-      textTheme: _textTheme(base.textTheme, palette.textPrimary, palette.textSecondary),
+      pageTransitionsTheme: forgePageTransitionsTheme,
+      textTheme: _textTheme(
+        base.textTheme,
+        palette.textPrimary,
+        palette.textSecondary,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -44,7 +50,9 @@ class AppTheme {
           backgroundColor: palette.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
@@ -55,7 +63,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
         hintStyle: TextStyle(color: palette.textSecondary),
       ),
       dividerTheme: DividerThemeData(color: palette.border, thickness: 1),
@@ -72,12 +83,16 @@ class AppTheme {
         indicatorColor: palette.primary.withValues(alpha: 0.18),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
-            color: states.contains(WidgetState.selected) ? palette.primary : palette.textSecondary,
+            color: states.contains(WidgetState.selected)
+                ? palette.primary
+                : palette.textSecondary,
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            color: states.contains(WidgetState.selected) ? palette.primary : palette.textSecondary,
+            color: states.contains(WidgetState.selected)
+                ? palette.primary
+                : palette.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -88,13 +103,28 @@ class AppTheme {
 
   static TextTheme _textTheme(TextTheme base, Color primary, Color secondary) {
     return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(color: primary, fontWeight: FontWeight.w700),
-      headlineMedium: base.headlineMedium?.copyWith(color: primary, fontWeight: FontWeight.w700),
-      titleLarge: base.titleLarge?.copyWith(color: primary, fontWeight: FontWeight.w600),
-      titleMedium: base.titleMedium?.copyWith(color: primary, fontWeight: FontWeight.w600),
+      displayLarge: base.displayLarge?.copyWith(
+        color: primary,
+        fontWeight: FontWeight.w700,
+      ),
+      headlineMedium: base.headlineMedium?.copyWith(
+        color: primary,
+        fontWeight: FontWeight.w700,
+      ),
+      titleLarge: base.titleLarge?.copyWith(
+        color: primary,
+        fontWeight: FontWeight.w600,
+      ),
+      titleMedium: base.titleMedium?.copyWith(
+        color: primary,
+        fontWeight: FontWeight.w600,
+      ),
       bodyLarge: base.bodyLarge?.copyWith(color: primary),
       bodyMedium: base.bodyMedium?.copyWith(color: secondary),
-      labelLarge: base.labelLarge?.copyWith(color: primary, fontWeight: FontWeight.w600),
+      labelLarge: base.labelLarge?.copyWith(
+        color: primary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }

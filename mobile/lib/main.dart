@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/notifications/notification_service.dart';
+import 'core/offline/offline_sync_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme_controller.dart';
 
@@ -27,6 +28,10 @@ class _ForgeAppState extends ConsumerState<ForgeApp> {
     // screen. GoRouter instances can navigate without a BuildContext, so this
     // works even before any screen has built.
     NotificationService.instance.pendingHabitId.addListener(_handlePendingNotification);
+    // Provider bodies are lazy — reading it here is what actually starts the
+    // connectivity listener and flushes anything queued from a session that
+    // ended while still offline.
+    ref.read(offlineSyncServiceProvider);
   }
 
   void _handlePendingNotification() {

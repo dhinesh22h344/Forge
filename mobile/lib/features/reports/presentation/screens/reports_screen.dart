@@ -6,7 +6,6 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/loading_view.dart';
-import '../../../achievements/presentation/screens/achievements_screen.dart';
 import '../../domain/entities/report_overview.dart';
 import '../../domain/entities/report_range.dart';
 import '../providers/reports_controller.dart';
@@ -24,16 +23,7 @@ class ReportsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.emoji_events_outlined),
-            tooltip: 'Achievements',
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AchievementsScreen())),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Reports')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(reportsControllerProvider),
         child: ListView(

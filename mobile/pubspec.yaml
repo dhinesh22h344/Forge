@@ -31,10 +31,23 @@ dependencies:
   timezone: ^0.9.4
   flutter_timezone: ^3.0.1
 
+  # Offline-first habit check-off: queue storage + reconnect detection
+  shared_preferences: ^2.3.3
+  connectivity_plus: ^6.1.0
+
+  # Export/Import: write the backup file, share it out, and pick one back in
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  file_picker: ^8.1.6
+
+  # Home-screen widgets: bridges today's streak/completion into native storage
+  home_widget: ^0.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

@@ -75,6 +75,10 @@ public class User extends BaseEntity {
         return passwordHash;
     }
 
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public String getProfilePictureUrl() {
         return profilePictureUrl;
     }
@@ -142,5 +146,16 @@ public class User extends BaseEntity {
 
     public Instant getMemberSince() {
         return memberSince;
+    }
+
+    /**
+     * The unique constraints on email/username have no `deleted_at IS NULL` predicate, so a
+     * soft-deleted row would otherwise block that email/username from ever being registered
+     * again. Mutate them to a tombstone value right before deleting.
+     */
+    public void tombstone() {
+        this.email = "deleted-" + getId() + "@deleted.forge.local";
+        this.username = "deleted-" + getId();
+        this.passwordHash = null;
     }
 }

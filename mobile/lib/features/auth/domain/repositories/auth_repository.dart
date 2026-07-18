@@ -31,4 +31,11 @@ abstract class AuthRepository {
   Future<User?> getCurrentUser();
 
   Future<bool> hasValidSession();
+
+  Future<Result<void>> changePassword({required String currentPassword, required String newPassword});
+
+  /// Unlike [logout], this only clears the local session once the server
+  /// confirms deletion — surfacing a failure here (e.g. offline) must not
+  /// tell the user their account is gone when it isn't.
+  Future<Result<void>> deleteAccount();
 }

@@ -5,6 +5,7 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/widgets/staggered_fade_in.dart';
 import '../providers/categories_controller.dart';
 import '../widgets/category_card.dart';
 import 'create_category_screen.dart';
@@ -19,7 +20,9 @@ class CategoriesListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Categories')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateCategoryScreen())),
+        onPressed: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const CreateCategoryScreen())),
         child: const Icon(Icons.add_rounded),
       ),
       body: categoriesAsync.when(
@@ -33,10 +36,12 @@ class CategoriesListScreen extends ConsumerWidget {
             return EmptyState(
               icon: Icons.category_rounded,
               title: 'No categories yet',
-              message: 'Create your first category to start organizing habits — Fitness, Learning, Finance, anything.',
+              message:
+                  'Create your first category to start organizing habits — Fitness, Learning, Finance, anything.',
               actionLabel: 'Create Category',
-              onAction: () =>
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateCategoryScreen())),
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CreateCategoryScreen()),
+              ),
             );
           }
           return GridView.builder(
@@ -50,10 +55,16 @@ class CategoriesListScreen extends ConsumerWidget {
             itemCount: categories.length,
             itemBuilder: (context, i) {
               final category = categories[i];
-              return CategoryCard(
-                category: category,
-                onTap: () => Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => CreateCategoryScreen(editing: category))),
+              return StaggeredFadeIn(
+                index: i,
+                child: CategoryCard(
+                  category: category,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CreateCategoryScreen(editing: category),
+                    ),
+                  ),
+                ),
               );
             },
           );

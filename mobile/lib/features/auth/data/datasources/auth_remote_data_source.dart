@@ -44,8 +44,8 @@ class AuthRemoteDataSource {
     return _parseTokenPair(response);
   }
 
-  Future<void> logout() async {
-    await _client.dio.post('/auth/logout');
+  Future<void> logout(String refreshToken) async {
+    await _client.dio.post('/auth/logout', data: {'refreshToken': refreshToken});
   }
 
   Future<UserModel> getMe() async {
@@ -56,6 +56,17 @@ class AuthRemoteDataSource {
   Future<UserModel> updateMe(Map<String, dynamic> patch) async {
     final response = await _client.dio.patch('/users/me', data: patch);
     return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> changePassword({required String currentPassword, required String newPassword}) async {
+    await _client.dio.post('/users/me/change-password', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<void> deleteAccount() async {
+    await _client.dio.delete('/users/me');
   }
 
   AuthTokenPair _parseTokenPair(Response response) {

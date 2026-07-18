@@ -5,11 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/forge_card.dart';
+import '../../../../core/widgets/forge_flame.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/widgets/staggered_fade_in.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../categories/presentation/providers/categories_controller.dart';
 import '../../../categories/presentation/screens/categories_list_screen.dart';
 import '../../../habits/presentation/screens/create_habit_screen.dart';
+import '../../../journal/presentation/screens/journal_list_screen.dart';
+import '../../../search/presentation/screens/search_screen.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../domain/entities/dashboard_widget_config.dart';
 import '../../domain/entities/dashboard_widget_type.dart';
@@ -29,15 +33,33 @@ class DashboardScreen extends ConsumerWidget {
         title: Text(user == null ? 'Dashboard' : 'Hey, ${user.username}'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.menu_book_rounded),
+            tooltip: 'Journal',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const JournalListScreen())),
+          ),
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: 'Search',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SearchScreen())),
+          ),
+          IconButton(
             icon: const Icon(Icons.palette_outlined),
             tooltip: 'Theme',
             onPressed: () => context.push('/settings/theme'),
           ),
           dashboardAsync.maybeWhen(
             data: (state) => IconButton(
-              icon: Icon(state.isCustomizing ? Icons.check_rounded : Icons.tune_rounded),
+              icon: Icon(
+                state.isCustomizing ? Icons.check_rounded : Icons.tune_rounded,
+              ),
               tooltip: state.isCustomizing ? 'Done' : 'Customize',
-              onPressed: () => ref.read(dashboardControllerProvider.notifier).toggleCustomizing(),
+              onPressed: () => ref
+                  .read(dashboardControllerProvider.notifier)
+                  .toggleCustomizing(),
             ),
             orElse: () => const SizedBox.shrink(),
           ),
@@ -51,7 +73,50 @@ class DashboardScreen extends ConsumerWidget {
         ),
         data: (state) => state.isCustomizing
             ? _CustomizeList(layout: state.layout)
-            : _WidgetList(layout: state.visibleLayout, summary: state.summary),
+            : Column(
+                children: [
+                  _FlameHeader(summary: state.summary),
+                  Expanded(
+                    child: _WidgetList(
+                      layout: state.visibleLayout,
+                      summary: state.summary,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// The dashboard's signature surface — the Forge Flame reads consistency
+/// across every category at once (see [DashboardSummary.consistencyScore]),
+/// so it lives here rather than under any one widget in the customizable
+/// list below it.
+class _FlameHeader extends StatelessWidget {
+  const _FlameHeader({required this.summary});
+  final DashboardSummary summary;
+
+  String get _caption {
+    if (summary.todayTotal == 0 && summary.currentStreak == 0) {
+      return 'Light your first habit today';
+    }
+    final pct = (summary.consistencyScore * 100).round();
+    if (summary.currentStreak == 0) return '$pct% consistent today';
+    return '$pct% consistent · ${summary.currentStreak}-day streak';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        children: [
+          ForgeFlame(intensity: summary.consistencyScore, size: 132),
+          const SizedBox(height: 6),
+          Text(_caption, style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }
@@ -65,12 +130,18 @@ class _WidgetList extends ConsumerWidget {
   Future<void> _openQuickAdd(BuildContext context, WidgetRef ref) async {
     final categories = ref.read(categoriesControllerProvider).value ?? const [];
     if (categories.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create a category first')));
-      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CategoriesListScreen()));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Create a category first')));
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const CategoriesListScreen()));
       return;
     }
     if (context.mounted) {
-      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateHabitScreen()));
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const CreateHabitScreen()));
     }
   }
 
@@ -94,10 +165,15 @@ class _WidgetList extends ConsumerWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, i) {
         final type = layout[i].type;
-        return DashboardWidgetCard(
-          type: type,
-          summary: summary,
-          onTap: type == DashboardWidgetType.quickAdd ? () => _openQuickAdd(context, ref) : null,
+        return StaggeredFadeIn(
+          index: i,
+          child: DashboardWidgetCard(
+            type: type,
+            summary: summary,
+            onTap: type == DashboardWidgetType.quickAdd
+                ? () => _openQuickAdd(context, ref)
+                : null,
+          ),
         );
       },
     );
@@ -110,7 +186,8 @@ class _CustomizeList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ordered = List<DashboardWidgetConfig>.from(layout)..sort((a, b) => a.position.compareTo(b.position));
+    final ordered = List<DashboardWidgetConfig>.from(layout)
+      ..sort((a, b) => a.position.compareTo(b.position));
     final controller = ref.read(dashboardControllerProvider.notifier);
 
     return Column(
@@ -131,7 +208,10 @@ class _CustomizeList extends ConsumerWidget {
               final config = ordered[i];
               return ForgeCard(
                 key: ValueKey(config.type),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: Row(
                   children: [
                     const Icon(Icons.drag_handle_rounded),

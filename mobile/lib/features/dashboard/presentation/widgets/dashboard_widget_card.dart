@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/forge_card.dart';
+import '../../../../core/widgets/forge_flame.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../domain/entities/dashboard_widget_type.dart';
 
@@ -9,7 +10,12 @@ import '../../domain/entities/dashboard_widget_type.dart';
 /// explicit empty state — this screen is what a brand-new account sees for
 /// a while, since categories/habits (M4/M5) are built after this milestone.
 class DashboardWidgetCard extends StatelessWidget {
-  const DashboardWidgetCard({super.key, required this.type, required this.summary, this.onTap});
+  const DashboardWidgetCard({
+    super.key,
+    required this.type,
+    required this.summary,
+    this.onTap,
+  });
 
   final DashboardWidgetType type;
   final DashboardSummary summary;
@@ -24,12 +30,7 @@ class DashboardWidgetCard extends StatelessWidget {
     final theme = Theme.of(context);
     switch (type) {
       case DashboardWidgetType.currentStreak:
-        return _StatRow(
-          icon: Icons.local_fire_department_rounded,
-          label: 'Current Streak',
-          value: summary.currentStreak == 0 ? 'No streak yet' : '${summary.currentStreak} days',
-          color: theme.colorScheme.error,
-        );
+        return _StreakRow(summary: summary);
       case DashboardWidgetType.bestStreak:
         return _StatRow(
           icon: Icons.emoji_events_rounded,
@@ -65,7 +66,12 @@ class DashboardWidgetCard extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
-  const _StatRow({required this.icon, required this.label, required this.value, required this.color});
+  const _StatRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -77,7 +83,10 @@ class _StatRow extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: Icon(icon, color: color),
         ),
         const SizedBox(width: 14),
@@ -87,6 +96,50 @@ class _StatRow extends StatelessWidget {
             children: [
               Text(label, style: Theme.of(context).textTheme.bodyMedium),
               Text(value, style: Theme.of(context).textTheme.titleLarge),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Same flame used in the dashboard header, just mini and unadorned — this
+/// is what keeps "current streak" reading as the same identity mark
+/// everywhere it shows up, not a one-off icon.
+class _StreakRow extends StatelessWidget {
+  const _StreakRow({required this.summary});
+  final DashboardSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: ForgeFlame(
+              intensity: summary.consistencyScore,
+              size: 40,
+              showAura: false,
+              showSparks: false,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Current Streak', style: theme.textTheme.bodyMedium),
+              Text(
+                summary.currentStreak == 0
+                    ? 'No streak yet'
+                    : '${summary.currentStreak} days',
+                style: theme.textTheme.titleLarge,
+              ),
             ],
           ),
         ),
@@ -105,9 +158,15 @@ class _TodayProgress extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Today's Progress", style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            "Today's Progress",
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
-          Text('Create a habit to start tracking today.', style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            'Create a habit to start tracking today.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
         ],
       );
     }
@@ -115,11 +174,20 @@ class _TodayProgress extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Today's Progress", style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          "Today's Progress",
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(value: ratio, minHeight: 8),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: ratio),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) =>
+                LinearProgressIndicator(value: value, minHeight: 8),
+          ),
         ),
         const SizedBox(height: 8),
         Text('${summary.todayCompleted} / ${summary.todayTotal} completed'),
@@ -143,7 +211,10 @@ class _WeeklyProgress extends StatelessWidget {
         Text('Weekly Progress', style: theme.textTheme.titleMedium),
         const SizedBox(height: 16),
         if (!hasData)
-          Text('Your week will fill in as you complete habits.', style: theme.textTheme.bodyMedium)
+          Text(
+            'Your week will fill in as you complete habits.',
+            style: theme.textTheme.bodyMedium,
+          )
         else
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,15 +226,22 @@ class _WeeklyProgress extends StatelessWidget {
                     width: 12,
                     alignment: Alignment.bottomCenter,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.08,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: FractionallySizedBox(
-                      heightFactor: rates[i].clamp(0.05, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(6),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.02, end: rates[i].clamp(0.05, 1.0)),
+                      duration: Duration(milliseconds: 500 + i * 60),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) => FractionallySizedBox(
+                        heightFactor: value,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ),
                       ),
                     ),
@@ -187,9 +265,17 @@ class _QuickAdd extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.add_circle_rounded, color: Theme.of(context).colorScheme.primary),
+        Icon(
+          Icons.add_circle_rounded,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         const SizedBox(width: 12),
-        Expanded(child: Text('Quick Add Habit', style: Theme.of(context).textTheme.titleMedium)),
+        Expanded(
+          child: Text(
+            'Quick Add Habit',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
         const Icon(Icons.chevron_right_rounded),
       ],
     );
@@ -209,7 +295,10 @@ class _RecentActivity extends StatelessWidget {
         children: [
           Text('Recent Activity', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text('Completed habits will show up here.', style: theme.textTheme.bodyMedium),
+          Text(
+            'Completed habits will show up here.',
+            style: theme.textTheme.bodyMedium,
+          ),
         ],
       );
     }
@@ -223,10 +312,17 @@ class _RecentActivity extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, size: 18, color: Colors.greenAccent),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: Colors.greenAccent,
+                ),
                 const SizedBox(width: 8),
                 Expanded(child: Text(item.habitName)),
-                Text(DateFormat.jm().format(item.completedAt), style: theme.textTheme.bodySmall),
+                Text(
+                  DateFormat.jm().format(item.completedAt),
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -262,10 +358,17 @@ class _UpcomingReminders extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                Icon(Icons.notifications_active_rounded, size: 18, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.notifications_active_rounded,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(child: Text(item.habitName)),
-                Text(DateFormat.jm().format(item.scheduledAt), style: theme.textTheme.bodySmall),
+                Text(
+                  DateFormat.jm().format(item.scheduledAt),
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -282,10 +385,15 @@ class _CalendarPreview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(DateFormat.yMMMM().format(now), style: theme.textTheme.titleMedium),
+        Text(
+          DateFormat.yMMMM().format(now),
+          style: theme.textTheme.titleMedium,
+        ),
         const SizedBox(height: 12),
-        Text('Full calendar with completion history is available once you have tracked habits.',
-            style: theme.textTheme.bodyMedium),
+        Text(
+          'Full calendar with completion history is available once you have tracked habits.',
+          style: theme.textTheme.bodyMedium,
+        ),
       ],
     );
   }
@@ -303,7 +411,12 @@ class _MotivationalQuote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quote = _quotes[DateTime.now().day % _quotes.length];
-    return Text('"$quote"', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic));
+    return Text(
+      '"$quote"',
+      style: Theme.of(
+        context,
+      ).textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic),
+    );
   }
 }
 
@@ -320,7 +433,10 @@ class _DailyGoal extends StatelessWidget {
         children: [
           Text('Daily Goal', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text('Set a daily goal from Settings once you have habits.', style: theme.textTheme.bodyMedium),
+          Text(
+            'Set a daily goal from Settings once you have habits.',
+            style: theme.textTheme.bodyMedium,
+          ),
         ],
       );
     }
@@ -329,7 +445,10 @@ class _DailyGoal extends StatelessWidget {
       children: [
         Text('Daily Goal', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text('${goal!.completed} / ${goal!.target}', style: theme.textTheme.titleLarge),
+        Text(
+          '${goal!.completed} / ${goal!.target}',
+          style: theme.textTheme.titleLarge,
+        ),
       ],
     );
   }

@@ -20,6 +20,8 @@ tags:
   - name: habit-logs
   - name: reminders
   - name: achievements
+  - name: furnace
+  - name: records
   - name: reports
   - name: journal
   - name: profile
@@ -95,6 +97,20 @@ paths:
       summary: Update profile fields
       responses:
         "200": { description: Updated }
+        "400": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [users]
+      summary: Soft-delete the account (habits/logs/categories are preserved, email/username freed for re-registration) and revoke all sessions
+      responses:
+        "204": { description: Deleted }
+
+  /users/me/change-password:
+    post:
+      tags: [users]
+      summary: Change password; revokes all other sessions' refresh tokens
+      responses:
+        "204": { description: Changed }
+        "401": { description: Current password is incorrect }
         "400": { $ref: "#/components/responses/ValidationError" }
 
   /categories:
@@ -255,6 +271,54 @@ paths:
       responses:
         "200": { description: OK }
 
+  /furnace:
+    get:
+      tags: [furnace]
+      summary: >
+        Habits currently sitting as an "ember" — a missed scheduled day still within its
+        grace window (through the end of the day after the miss) and eligible to be
+        reforged, non-punitive streak recovery.
+      responses:
+        "200": { description: OK }
+
+  /habits/{id}/furnace/reforge:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    post:
+      tags: [furnace]
+      summary: >
+        Reforge the habit's most recent missed day back to COMPLETED. Fails if there's no
+        active ember, the grace window has expired, or this habit was already reforged in
+        the last 30 days.
+      responses:
+        "200": { description: Recovered — updated streak returned }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /records:
+    get:
+      tags: [records]
+      summary: >
+        All-time personal bests (best streak ever, best perfect-day streak, total
+        completions, best single day, per-habit leaderboard) — unbounded, unlike
+        /reports/summary which caps lookback for its own cost reasons.
+      responses:
+        "200": { description: OK }
+
+  /journal:
+    get:
+      tags: [journal]
+      summary: List entries, optionally bounded by from/to (defaults to all)
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200": { description: OK }
+
   /journal/{date}:
     parameters:
       - name: date
@@ -268,9 +332,15 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
     put:
       tags: [journal]
-      summary: Create or update the entry for this date
+      summary: Create or update the entry for this date (one entry per user per day)
       responses:
         "200": { description: Saved }
+        "400": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [journal]
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /settings:
     get:
@@ -290,18 +360,22 @@ paths:
         "204": { description: Registered }
 
   /export:
-    post:
+    get:
       tags: [export]
-      summary: Generate a JSON/CSV/PDF export
+      summary: Full JSON backup of the current user's categories, habits, habit logs, and journal entries
       responses:
-        "202": { description: Export job accepted }
+        "200": { description: OK }
 
   /import:
     post:
       tags: [import]
-      summary: Import a previously exported backup
+      summary: >
+        Restore a previously exported backup. Always additive — every row gets a freshly minted
+        id, so this never overwrites existing data, only adds another copy (journal entries are
+        the one exception: same-day entries upsert in place to respect the one-per-day constraint).
       responses:
-        "202": { description: Import job accepted }
+        "200": { description: Imported }
+        "400": { $ref: "#/components/responses/ValidationError" }
 
   /search:
     get:

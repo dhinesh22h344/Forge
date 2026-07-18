@@ -13,6 +13,8 @@ public interface HabitLogRepository extends JpaRepository<HabitLog, UUID> {
 
     List<HabitLog> findByHabitIdOrderByLogDateDesc(UUID habitId);
 
+    List<HabitLog> findByUserId(UUID userId);
+
     List<HabitLog> findByUserIdAndLogDate(UUID userId, LocalDate logDate);
 
     List<HabitLog> findByUserIdAndLogDateBetweenOrderByLogDate(UUID userId, LocalDate start, LocalDate end);
@@ -20,4 +22,6 @@ public interface HabitLogRepository extends JpaRepository<HabitLog, UUID> {
     List<HabitLog> findByHabitIdAndLogDateBetweenOrderByLogDate(UUID habitId, LocalDate start, LocalDate end);
 
     long countByUserIdAndStatus(UUID userId, String status);
+
+    List<HabitLog> findByUserIdAndStatus(UUID userId, String status);
 }

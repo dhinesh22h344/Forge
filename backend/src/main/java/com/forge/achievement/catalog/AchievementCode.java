@@ -71,6 +71,12 @@ public enum AchievementCode {
         public boolean isSatisfiedBy(AchievementStats stats) {
             return stats.bestPerfectDayStreak() >= 7;
         }
+    },
+    ETERNAL_FLAME("Eternal Flame", "Reach a 365-day streak on any habit.", "local_fire_department_rounded", true) {
+        @Override
+        public boolean isSatisfiedBy(AchievementStats stats) {
+            return stats.bestHabitStreak() >= 365;
+        }
     };
 
     private final String title;

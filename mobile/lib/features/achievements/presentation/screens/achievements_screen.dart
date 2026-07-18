@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/widgets/staggered_fade_in.dart';
+import '../../../furnace/presentation/screens/furnace_screen.dart';
+import '../../../records/presentation/screens/personal_records_screen.dart';
 import '../../data/local/seen_achievements_store.dart';
 import '../../domain/entities/achievement.dart';
 import '../providers/achievements_controller.dart';
@@ -30,7 +33,21 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements')),
+      appBar: AppBar(
+        title: const Text('Achievements'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.local_fire_department_outlined),
+            tooltip: 'The Furnace',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FurnaceScreen())),
+          ),
+          IconButton(
+            icon: const Icon(Icons.military_tech_outlined),
+            tooltip: 'Personal Records',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalRecordsScreen())),
+          ),
+        ],
+      ),
       body: achievementsAsync.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(
@@ -46,7 +63,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.85,
           ),
-          itemBuilder: (context, i) => AchievementCard(achievement: achievements[i]),
+          itemBuilder: (context, i) => StaggeredFadeIn(
+            index: i,
+            child: AchievementCard(achievement: achievements[i]),
+          ),
         ),
       ),
     );
@@ -61,7 +81,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     if (_announcing) return;
     final store = ref.read(seenAchievementsStoreProvider);
     final seen = await store.read();
-    final newlyUnlocked = achievements.where((a) => a.unlocked && !seen.contains(a.code)).toList();
+    final newlyUnlocked = achievements
+        .where((a) => a.unlocked && !seen.contains(a.code))
+        .toList();
     if (newlyUnlocked.isEmpty) return;
 
     _announcing = true;
@@ -82,7 +104,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       transitionDuration: const Duration(milliseconds: 350),
       pageBuilder: (context, _, __) => _UnlockDialog(achievement: achievement),
       transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.elasticOut);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.elasticOut,
+        );
         return ScaleTransition(
           scale: curved,
           child: FadeTransition(opacity: animation, child: child),
@@ -111,7 +136,9 @@ class _UnlockDialog extends StatelessWidget {
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: theme.dividerTheme.color ?? Colors.transparent),
+              border: Border.all(
+                color: theme.dividerTheme.color ?? Colors.transparent,
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -120,19 +147,40 @@ class _UnlockDialog extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary]),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
+                    ),
                   ),
-                  child: Icon(AchievementIcons.resolve(achievement.icon), size: 40, color: Colors.white),
+                  child: Icon(
+                    AchievementIcons.resolve(achievement.icon),
+                    size: 40,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'ACHIEVEMENT UNLOCKED',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w700, letterSpacing: 1),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                Text(achievement.title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+                Text(
+                  achievement.title,
+                  style: theme.textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 8),
-                Text(achievement.description, style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
+                Text(
+                  achievement.description,
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
