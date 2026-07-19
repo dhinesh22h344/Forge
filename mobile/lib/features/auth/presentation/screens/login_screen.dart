@@ -16,6 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _isSubmitting = false;
   String? _errorMessage;
 
   @override
@@ -27,13 +28,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _errorMessage = null);
+    setState(() {
+      _errorMessage = null;
+      _isSubmitting = true;
+    });
     final failure = await ref.read(authControllerProvider.notifier).login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
-    if (failure != null && mounted) {
-      setState(() => _errorMessage = failure.message);
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+        if (failure != null) _errorMessage = failure.message;
+      });
     }
     // On success, the router's refresh listener reacts to authControllerProvider
     // and redirects to /dashboard — no manual navigation needed here.
@@ -41,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authControllerProvider).isLoading;
+    final isLoading = _isSubmitting;
 
     return Scaffold(
       body: SafeArea(

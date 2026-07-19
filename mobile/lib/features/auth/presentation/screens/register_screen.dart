@@ -21,6 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _isSubmitting = false;
   String? _errorMessage;
 
   @override
@@ -33,7 +34,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _errorMessage = null);
+    setState(() {
+      _errorMessage = null;
+      _isSubmitting = true;
+    });
 
     final deviceLocale = View.of(context).platformDispatcher.locale;
     final failure = await ref.read(authControllerProvider.notifier).register(
@@ -45,8 +49,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           language: deviceLocale.languageCode,
           darkModePreference: true,
         );
-    if (failure != null && mounted) {
-      setState(() => _errorMessage = failure.message);
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+        if (failure != null) _errorMessage = failure.message;
+      });
     }
     // On success the router redirect (needsProfileSetupProvider) sends us to
     // /create-profile itself — see core/router/app_router.dart. Navigating
@@ -55,7 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authControllerProvider).isLoading;
+    final isLoading = _isSubmitting;
 
     return Scaffold(
       body: SafeArea(

@@ -33,7 +33,6 @@ class AuthController extends AsyncNotifier<User?> {
     required String language,
     required bool darkModePreference,
   }) async {
-    state = const AsyncLoading();
     final result = await _registerUseCase(
       username: username,
       email: email,
@@ -49,25 +48,18 @@ class AuthController extends AsyncNotifier<User?> {
         ref.read(needsProfileSetupProvider.notifier).state = true;
         return null;
       },
-      failure: (failure) {
-        state = AsyncData(state.value);
-        return failure;
-      },
+      failure: (failure) => failure,
     );
   }
 
   Future<Failure?> login({required String email, required String password}) async {
-    state = const AsyncLoading();
     final result = await _loginUseCase(email: email, password: password);
     return result.when(
       success: (user) {
         state = AsyncData(user);
         return null;
       },
-      failure: (failure) {
-        state = AsyncData(state.value);
-        return failure;
-      },
+      failure: (failure) => failure,
     );
   }
 
