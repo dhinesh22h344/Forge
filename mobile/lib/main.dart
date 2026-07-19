@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 
+import 'core/home_widget/home_widget_sync.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/offline/offline_sync_service.dart';
 import 'core/router/app_router.dart';
@@ -9,6 +11,9 @@ import 'core/theme/theme_controller.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.initialize();
+  // No-op on Android; on iOS this tells the plugin which App Group's shared
+  // UserDefaults the ForgeWidget extension reads from.
+  await HomeWidget.setAppGroupId(HomeWidgetSync.iOSAppGroupId);
   runApp(const ProviderScope(child: ForgeApp()));
 }
 

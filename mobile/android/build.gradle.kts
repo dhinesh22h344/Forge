@@ -38,6 +38,18 @@ gradle.projectsEvaluated {
         sourceCompatibility = "17"
         targetCompatibility = "17"
     }
+    // Same fix as flutter_timezone above — home_widget's own build.gradle
+    // hardcodes Java 1.8, which now mismatches the Kotlin 17 bump forced on
+    // every subproject above.
+    project(":home_widget").tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
+    // Same again — file_picker (10.x) hardcodes Java 11.
+    project(":file_picker").tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
 }
 
 tasks.register<Delete>("clean") {

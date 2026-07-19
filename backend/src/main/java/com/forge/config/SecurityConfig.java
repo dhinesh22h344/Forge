@@ -13,12 +13,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -31,6 +34,15 @@ public class SecurityConfig {
         "/swagger-ui/**",
         "/swagger-ui.html"
     };
+
+    private static final List<String> LOOPBACK_ORIGIN_PATTERNS =
+            List.of("http://localhost:*", "http://10.0.2.2:*");
+
+    // Comma-separated extra origins (e.g. a deployed backend's own web console, if any) —
+    // native mobile clients don't send an Origin header so CORS doesn't gate them, but this
+    // is here for any browser-based client (Swagger UI on a hosted domain, a future web app).
+    @Value("${forge.cors.allowed-origins:}")
+    private String allowedOriginsEnv;
 
     // A local instance, not an injected bean: this entry point is the one place in the app that
     // must serialize a response before Spring's request-scoped machinery (including the
@@ -63,11 +75,19 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Loopback-only defaults for local dev; production origins are supplied via env config. */
+    /** Loopback defaults for local dev, plus any extra origins from {@code forge.cors.allowed-origins}. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> originPatterns = new ArrayList<>(LOOPBACK_ORIGIN_PATTERNS);
+        if (!allowedOriginsEnv.isBlank()) {
+            originPatterns.addAll(Arrays.stream(allowedOriginsEnv.split(","))
+                    .map(String::trim)
+                    .filter(origin -> !origin.isEmpty())
+                    .toList());
+        }
+
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://10.0.2.2:*"));
+        configuration.setAllowedOriginPatterns(originPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

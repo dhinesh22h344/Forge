@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/home_widget/home_widget_sync.dart';
 import '../../data/repositories/dashboard_repository_impl.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../domain/entities/dashboard_widget_config.dart';
@@ -36,6 +39,11 @@ class DashboardController extends AsyncNotifier<DashboardState> {
 
     final summary = summaryResult.when(success: (s) => s, failure: (_) => DashboardSummary.empty);
     final layout = layoutResult.when(success: (l) => l, failure: (_) => DashboardWidgetConfig.defaultLayout());
+
+    // Fire-and-forget: the home-screen widget is a nice-to-have mirror of
+    // this state, never a reason to fail loading the dashboard itself (e.g.
+    // no platform channel in unit tests, or the OS widget host is absent).
+    unawaited(HomeWidgetSync.sync(summary).catchError((_) {}));
 
     return DashboardState(summary: summary, layout: layout);
   }

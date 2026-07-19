@@ -38,10 +38,10 @@ dependencies:
   # Export/Import: write the backup file, share it out, and pick one back in
   path_provider: ^2.1.5
   share_plus: ^10.1.4
-  file_picker: ^8.1.6
+  file_picker: ^10.3.9
 
   # Home-screen widgets: bridges today's streak/completion into native storage
-  home_widget: ^0.7.0
+  home_widget: ^0.9.3
 
 dev_dependencies:
   flutter_test:

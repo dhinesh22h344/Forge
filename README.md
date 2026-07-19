@@ -28,7 +28,12 @@ verification pass:
 - **M8 Achievements** — badge engine + screen, reachable via push navigation from Reports.
 - **M9 Notifications (Track A only)** — local reminder notifications scheduled off each habit's reminders, verified end-to-end on the Android emulator (including a timezone-resolution bug fix — see commit history). Track B (FCM push) is still blocked on Firebase project provisioning, same as `/auth/session` above.
 
-Not started: M10 Offline Sync, Journal, Search, Export/Import, and Profile (currently a placeholder screen).
+**Phase 4 (engagement breadth)** — Journal (one entry/day, upsert semantics, `/api/v1/journal`), client-side Search over habits/categories, Export/Import (`/api/v1/export`, `/api/v1/import` — full JSON backup, always additive on import), and a home-screen widget mirroring today's completion + streak:
+- Android widget (`ForgeWidgetProvider`) is wired end-to-end and verified via `flutter build apk --debug`.
+- iOS widget source (`ios/ForgeWidget/ForgeWidget.swift`) is written but not wired into an Xcode target — this machine only has the Command Line Tools, not full Xcode, and adding a WidgetKit extension target means hand-editing `project.pbxproj`, which isn't safe to do blind. See `mobile/ios/WIDGET_SETUP.md` for the one-time Xcode steps needed to finish it.
+- FCM push (M9 Track B) is still not started — same Firebase blocker as above.
+
+Not started: a broader automated test suite and end-to-end device verification for M4 onward.
 
 ### Running locally
 - Backend: `cd backend && ./gradlew bootRun` (needs Postgres — `brew services start postgresql@16` or `docker compose -f docker/docker-compose.yml up -d postgres`)
